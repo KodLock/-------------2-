@@ -68,26 +68,37 @@ configurations {
 }
 
 dependencies {
-    fatRuntime("net.fabricmc:fabric-loader:${project.loader_version}") {
-        exclude group: 'net.fabricmc', module: 'sponge-mixin'
-    }
+    // Fabric Loader БЕЗ exclude sponge-mixin — Knot требует ASM + sponge-mixin
+    // на classpath (LoaderUtil.verifyClasspath). Без них Knot падает в <clinit>.
+    fatRuntime "net.fabricmc:fabric-loader:${project.loader_version}"
     fatRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Явные зависимости Fabric Loader (ASM, sponge-mixin, tiny-remapper) —
+    // они не приходят транзитивно через fatRuntime coordinates, добавляем явно.
+    fatRuntime "org.ow2.asm:asm:9.9"
+    fatRuntime "org.ow2.asm:asm-analysis:9.9"
+    fatRuntime "org.ow2.asm:asm-commons:9.9"
+    fatRuntime "org.ow2.asm:asm-tree:9.9"
+    fatRuntime "org.ow2.asm:asm-util:9.9"
+    fatRuntime "net.fabricmc:sponge-mixin:0.15.5+mixin.0.8.7"
+    fatRuntime "net.fabricmc:tiny-remapper:0.12.1"
+    fatRuntime "org.jetbrains:annotations:26.0.2"
 }
 
 tasks.register('fatClient', Jar) {
     dependsOn jar
     archiveClassifier.set('versionka')
+    zip64 = true
+    // EXCLUDE (дефолт): MinecraftGameProvider ищет игру по classpath jar'ов —
+    // дублирующиеся META-INF/services и классы от разных исходных jar'ов ломают
+    // его (zip overlapped components). Оставляем по одному экземпляру.
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes 'Main-Class': 'ru.kod.client.KodClientBootstrap'
     }
-    // Сам мод: remapJar + clientClasses (loom строит их в build/classes/...).
-    // jar.archiveFile уже remap'нут, но Loom кладёт туда только main-классы —
-    // клиентские классы лежат в build/classes/java/client и build/classes/java/main.
+    // === 1. Сам мод (remapJar) ===
     from(jar.archiveFile) {
         exclude 'META-INF/**'
         exclude '*-dev.jar', '*-sources.jar'
-        // jar already contains ru/kod/** — skip duplicate classes from classes dirs
         exclude 'ru/**'
     }
     from('build/classes/java/client') {
@@ -96,27 +107,70 @@ tasks.register('fatClient', Jar) {
     from('build/classes/java/main') {
         exclude 'META-INF/**'
     }
-    // Ресурсы мода (fabric.mod.json, kodclient.mixins.json) — только из build/resources
     from('build/resources/main') {
         exclude 'META-INF/**'
     }
     from('build/resources/client') {
         exclude 'META-INF/**'
     }
-    // Fabric Loader + Fabric API + все зависимости
+    // === 2. Fabric Loader + Fabric API + Minecraft ===
+    // ВАЖНО: Fabric Loader и Fabric API должны лежать в jar'е как ОТДЕЛЬНЫЕ zip'ы
+    // в META-INF/jars/ (Fabric's nested jar format), а не распакованы в корень.
+    // Иначе Knot не видит fabricloader и fabric-api как моды (HARD_DEP_NO_CANDIDATE).
+    // ВАЖНО: KnotClient должен быть на classpath при запуске — поэтому
+    // fabric-loader jar кладём и в корень (распакованно), и в META-INF/jars/.
+    // Распакованный KnotClient на classpath позволяет Class.forName("...KnotClient")
+    // найти его без URLClassLoader.
     from({
         configurations.fatRuntime.collect { it.isDirectory() ? it : zipTree(it) }
     }) {
+        // Fabric Loader классы + его зависимости (ASM, sponge-mixin, tiny-remapper) —
+        // в корень, чтобы KnotClient и его static initializer нашёл всё на classpath.
+        // Без ASM Knot падает: "ASM not detected on the classpath".
+        // ВАЖНО: META-INF/services/** НЕ исключаем — Knot ищет GameProvider
+        // через ServiceLoader (META-INF/services/net.fabricmc.loader.impl.game.GameProvider).
+        include 'net/fabricmc/loader/**'
+        include 'net/fabricmc/api/**'
+        include 'org/objectweb/asm/**'
+        include 'org/spongepowered/asm/**'
+        include 'net/fabricmc/tinyremapper/**'
+        include 'org/jetbrains/annotations/**'
+        include 'META-INF/services/**'
+        exclude 'META-INF/MANIFEST.MF'
         exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
         exclude 'META-INF/versions/**'
-        exclude 'fabric.mod.json'
-        exclude 'META-INF/MANIFEST.MF'
     }
-    // Нативные библиотеки LWJGL — в natives/ (извлекутся при запуске)
     from({
-        configurations.fatRuntime.collect { zipTree(it) }
+        configurations.fatRuntime.collect { it.isDirectory() ? it : it }
     }) {
-        include 'natives/**'
-        into 'natives'
+        into 'META-INF/jars'
+    }
+    // Minecraft отдельно — в корень fat jar'а
+    def loomCachePath = System.getenv('GRADLE_USER_HOME') != null
+        ? "${System.getenv('GRADLE_USER_HOME')}/caches/fabric-loom"
+        : "${layout.projectDirectory.asFile}/.ghome/caches/fabric-loom"
+    def mcClientJar = fileTree(dir: loomCachePath, include: '**/minecraft-clientonly-*.jar')
+        .files.find { it.name.contains('1.21.11') && !it.name.contains('intermediary') && !it.name.endsWith('.backup') }
+    def mcCommonJar = fileTree(dir: loomCachePath, include: '**/minecraft-common-*.jar')
+        .files.find { it.name.contains('1.21.11') && !it.name.contains('intermediary') && !it.name.endsWith('.backup') }
+    assert mcClientJar != null : "minecraft-clientonly jar not found in Loom cache: ${loomCachePath}"
+    assert mcCommonJar != null : "minecraft-common jar not found in Loom cache: ${loomCachePath}"
+    from(zipTree(mcClientJar)) {
+        exclude 'META-INF/**'
+    }
+    from(zipTree(mcCommonJar)) {
+        exclude 'META-INF/**'
+    }
+    // LWJGL нативки: Mojang поставляет их как META-INF/<platform>/... внутри
+    // lwjgl-*-natives-*.jar. Сохраняем именно такой путь — LWJGL резолвит нативки
+    // через Configuration#getPlatform() и ищет их в META-INF/<platform>/...
+    // внутри jar'ов на classpath. Наш бутстрап извлекает META-INF/<platform>/**
+    // в .kodclient/natives/<platform>/ и прописывает в java.library.path.
+    // ВАЖНО: runtimeClasspath содержит TP jars (minecraft-client.jar из Loom),
+    // их НЕ распаковываем ещё раз — только natives.
+    from({
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        include 'META-INF/linux/**', 'META-INF/windows/**', 'META-INF/macos/**'
     }
 }

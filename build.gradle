@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.11.8'
+    id 'fabric-loom' version '1.13-SNAPSHOT'
     id 'java'
 }
 
@@ -57,5 +57,66 @@ tasks.withType(Javadoc) {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
+
+configurations {
+    fatRuntime {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+dependencies {
+    fatRuntime("net.fabricmc:fabric-loader:${project.loader_version}") {
+        exclude group: 'net.fabricmc', module: 'sponge-mixin'
+    }
+    fatRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+tasks.register('fatClient', Jar) {
+    dependsOn jar
+    archiveClassifier.set('versionka')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'ru.kod.client.KodClientBootstrap'
+    }
+    // Сам мод: remapJar + clientClasses (loom строит их в build/classes/...).
+    // jar.archiveFile уже remap'нут, но Loom кладёт туда только main-классы —
+    // клиентские классы лежат в build/classes/java/client и build/classes/java/main.
+    from(jar.archiveFile) {
+        exclude 'META-INF/**'
+        exclude '*-dev.jar', '*-sources.jar'
+        // jar already contains ru/kod/** — skip duplicate classes from classes dirs
+        exclude 'ru/**'
+    }
+    from('build/classes/java/client') {
+        exclude 'META-INF/**'
+    }
+    from('build/classes/java/main') {
+        exclude 'META-INF/**'
+    }
+    // Ресурсы мода (fabric.mod.json, kodclient.mixins.json) — только из build/resources
+    from('build/resources/main') {
+        exclude 'META-INF/**'
+    }
+    from('build/resources/client') {
+        exclude 'META-INF/**'
+    }
+    // Fabric Loader + Fabric API + все зависимости
+    from({
+        configurations.fatRuntime.collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+        exclude 'META-INF/versions/**'
+        exclude 'fabric.mod.json'
+        exclude 'META-INF/MANIFEST.MF'
+    }
+    // Нативные библиотеки LWJGL — в natives/ (извлекутся при запуске)
+    from({
+        configurations.fatRuntime.collect { zipTree(it) }
+    }) {
+        include 'natives/**'
+        into 'natives'
     }
 }

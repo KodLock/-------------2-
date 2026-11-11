@@ -26,6 +26,7 @@ public class KodClient implements ClientModInitializer {
     private static KeyBinding clickGuiKey;
     private static KeyBinding swapKey;
     private static KeyBinding potionKey;
+    private static boolean rShiftHeld = false;
 
     @Override public void onInitializeClient() {
         Config.get();            // loads ./config/kodclient.json
@@ -41,8 +42,22 @@ public class KodClient implements ClientModInitializer {
 
         // Client tick: modules + key handling
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Прямой опрос GLFW: RShift дополнительно к KeyBinding (важно для версионки,
+            // где KeyBindingHelper может не сработать из-за порядка инициализации)
+            if (client.getWindow() != null && client.currentScreen == null) {
+                long handle = client.getWindow().getHandle();
+                if (GLFW.glfwGetKey(handle, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS
+                    || GLFW.glfwGetKey(handle, GLFW.GLFW_KEY_R) == GLFW.GLFW_PRESS) {
+                    if (!rShiftHeld) {
+                        client.setScreen(new ClickGuiScreen());
+                        rShiftHeld = true;
+                    }
+                } else {
+                    rShiftHeld = false;
+                }
+            }
             while (clickGuiKey.wasPressed()) {
-                client.setScreen(new ClickGuiScreen());
+                if (client.currentScreen == null) client.setScreen(new ClickGuiScreen());
             }
             while (swapKey.wasPressed()) {
                 var m = ModuleManager.get().find("AutoSwap");
@@ -62,10 +77,12 @@ public class KodClient implements ClientModInitializer {
             if (m.isPresent() && m.get().isEnabled() && m.get() instanceof AutoAccept a) a.onChatMessage(text);
         });
 
-        // Death: AutoMessage
+        // Диагностика в чат при входе — видно, что чит загрузился и какая клавиша открывает GUI
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            client.player.sendMessage(Text.literal("[KodClient] loaded — RShift opens ClickGUI"), false);
+            client.player.sendMessage(Text.literal("[KodClient] Чит загружен. Меню: RShift или R"), false);
         });
+
+        // (совместимость: второе сообщение при входе не нужно)
 
         // Save config on disconnect
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> Config.get().save());

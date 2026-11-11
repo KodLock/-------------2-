@@ -5,12 +5,28 @@ a ClickGUI on **Right Shift**, a JSON config and a `/kod` client command.
 
 ## Requirements
 
-- Minecraft **1.21.11**, Fabric Loader **0.18.4+**, Fabric API **0.141.3+1.21.11**
-- Java **21**
+- Minecraft **1.21.11**
+- Java **21** (для версионки — только Java, Fabric отдельно НЕ нужен)
 
-## Install
+## Install — ВЕРСИОНКА (standalone-клиент, Fabric не нужен)
 
-1. Install Fabric Loader for 1.21.11 (fabricmc.net).
+**Файл: `kodclient-1.0.0-1.21.11-versionka.jar`** — полный клиент, чит уже встроен.
+
+```bash
+java -jar kodclient-1.0.0-1.21.11-versionka.jar
+# или двойной клик по jar (если Java настроена как программа по умолчанию для .jar)
+```
+
+Внутри jar'а уже упакованы Minecraft 1.21.11, Fabric Loader, Fabric API и сам KodClient.
+Отдельно ничего качать и устанавливать не нужно. Первый запуск создаст папку `.kodclient/`
+с нативными библиотеками и конфигом. В игре **RShift** открывает меню чита.
+
+> Нужен интернет при первом запуске для входа в аккаунт (Microsoft OAuth).
+> Версионка работает только на Minecraft 1.21.11.
+
+## Install — мод (если уже есть Fabric)
+
+1. Install Fabric Loader for 1.21.11 (fabricmc.net) + Fabric API 0.141.3+1.21.11.
 2. Put `kodclient-1.0.0-1.21.11.jar` into `.minecraft/mods/`.
 3. Launch the game, press **RShift** to open the ClickGUI.
 

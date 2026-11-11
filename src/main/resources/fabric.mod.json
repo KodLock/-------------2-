@@ -3,7 +3,7 @@
   "id": "kodclient",
   "version": "${version}",
   "name": "KodClient",
-  "description": "Combat / Movement / Visuals / Player / Misc client for Minecraft 1.21.11",
+  "description": "Combat / Movement / Visuals / Player / Misc client for Minecraft 1.21",
   "authors": ["Kod"],
   "license": "ARR",
   "environment": "client",

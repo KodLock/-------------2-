@@ -1,17 +1,17 @@
-# KodClient — Fabric client for Minecraft 1.21.11
+# KodClient — Fabric client for Minecraft 1.21
 
 A Fabric mod (client-side) with Combat / Movement / Visuals / Player / Utilities / MISC modules,
 a ClickGUI on **Right Shift**, a JSON config and a `/kod` client command.
 
 ## Requirements
 
-- Minecraft **1.21.11**, Fabric Loader **0.18.4+**, Fabric API **0.141.3+1.21.11**
+- Minecraft **1.21**, Fabric Loader **0.18.4+**, Fabric API **0.141.3+1.21**
 - Java **21**
 
 ## Install
 
-1. Install Fabric Loader for 1.21.11 (fabricmc.net).
-2. Put `kodclient-1.0.0-1.21.11.jar` into `.minecraft/mods/`.
+1. Install Fabric Loader for 1.21 (fabricmc.net).
+2. Put `kodclient-1.0.0-1.21.jar` into `.minecraft/mods/`.
 3. Launch the game, press **RShift** to open the ClickGUI.
 
 ## Controls
@@ -83,7 +83,7 @@ AutoMessage, BassBoost — defaults are in `Config.java` exactly as requested.
 ./gradlew build        # or: gradle build (Gradle 8.14+, JDK 21)
 ```
 
-Output: `build/libs/kodclient-1.0.0-1.21.11.jar`
+Output: `build/libs/kodclient-1.0.0-1.21.jar`
 
 > Note: features like DiscordRPC / BassBoost are stubs (toggle + config entry);
 > they require additional libraries to be fully functional.

@@ -33,11 +33,11 @@ public class KodClient implements ClientModInitializer {
         KodCommand.register();   // /kod toggle|set|config|modules
 
         clickGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.kodclient.clickgui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, new KeyBinding.Category(net.minecraft.util.Identifier.of("kodclient", "category"))));
+            "key.kodclient.clickgui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "category.kodclient"));
         swapKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.kodclient.autoswap", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, new KeyBinding.Category(net.minecraft.util.Identifier.of("kodclient", "category"))));
+            "key.kodclient.autoswap", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "category.kodclient"));
         potionKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.kodclient.potion", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, new KeyBinding.Category(net.minecraft.util.Identifier.of("kodclient", "category"))));
+            "key.kodclient.potion", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "category.kodclient"));
 
         // Client tick: modules + key handling
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {

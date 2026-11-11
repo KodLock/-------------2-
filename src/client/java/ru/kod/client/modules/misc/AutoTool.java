@@ -24,7 +24,7 @@ public class AutoTool extends Module {
             float speed = stack.getMiningSpeedMultiplier(state);
             if (speed > best) { best = speed; bestSlot = i; }
         }
-        if (bestSlot >= 0) p.getInventory().setSelectedSlot(bestSlot);
+        if (bestSlot >= 0) p.getInventory().selectedSlot = bestSlot;
     }
 }
 

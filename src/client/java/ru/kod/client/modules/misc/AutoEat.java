@@ -19,10 +19,10 @@ public class AutoEat extends Module {
         for (int i = 0; i < 9; i++) {
             var stack = p.getInventory().getStack(i);
             if (stack.get(DataComponentTypes.FOOD) != null) {
-                int prev = p.getInventory().getSelectedSlot();
-                p.getInventory().setSelectedSlot(i);
+                int prev = p.getInventory().selectedSlot;
+                p.getInventory().selectedSlot = i;
                 mc.interactionManager.interactItem(p, Hand.MAIN_HAND);
-                p.getInventory().setSelectedSlot(prev);
+                p.getInventory().selectedSlot = prev;
                 return;
             }
         }

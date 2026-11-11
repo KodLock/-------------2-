@@ -2,9 +2,7 @@ package ru.kod.client.gui;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 import ru.kod.client.config.Config;
@@ -70,9 +68,7 @@ public class ClickGuiScreen extends Screen {
         }
     }
 
-    @Override public boolean mouseClicked(Click click, boolean doubled) {
-        double mouseX = click.x(), mouseY = click.y();
-        int button = click.button();
+    @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (String cat : categories) {
             int x = colX.get(cat);
             int y = 30 + HEADER_H;
@@ -85,7 +81,7 @@ public class ClickGuiScreen extends Screen {
                 y += ROW_H;
             }
         }
-        return super.mouseClicked(click, doubled);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double horiz, double vert) {
@@ -95,8 +91,7 @@ public class ClickGuiScreen extends Screen {
         return true;
     }
 
-    @Override public boolean keyPressed(KeyInput input) {
-        int keyCode = input.key();
+    @Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_RIGHT_SHIFT || keyCode == GLFW.GLFW_KEY_ESCAPE) {
             close();
             return true;
@@ -110,6 +105,6 @@ public class ClickGuiScreen extends Screen {
             Config.get().setNum("ka_cps", Math.max(1, Config.get().getNum("ka_cps") - 0.5));
             return true;
         }
-        return super.keyPressed(input);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

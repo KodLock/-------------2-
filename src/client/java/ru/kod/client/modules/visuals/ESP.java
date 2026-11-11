@@ -43,8 +43,8 @@ public class ESP extends Module implements HudRenderCallback {
     }
 
     private void drawBox(MinecraftClient mc, DrawContext ctx, PlayerEntity e, boolean isTarget) {
-        Vec3d cam = mc.gameRenderer.getCamera().getCameraPos();
-        Vec3d pos = e.getEntityPos();
+        Vec3d cam = mc.gameRenderer.getCamera().getPos();
+        Vec3d pos = e.getPos();
         double x = pos.x - cam.x, y = pos.y - cam.y, z = pos.z - cam.z;
         double w = e.getWidth() * 0.6, h = e.getHeight();
         float[][] corners = project(mc, x - w, y, z - w, x + w, y + h, z + w);

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "kodclient",
+  "version": "${version}",
+  "name": "KodClient",
+  "description": "Combat / Movement / Visuals / Player / Misc client for Minecraft 1.21.11",
+  "authors": ["Kod"],
+  "license": "ARR",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["ru.kod.client.KodClient"]
+  },
+  "mixins": ["kodclient.mixins.json"],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "~${minecraft_version}"
+  }
+}
